@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="<%= theme %>">
+<head>
+  <meta charset="UTF-8">
+  <title>Tag: <%= tag.name %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back">← Back</a>
+    <h1>🏷 #<%= tag.name %></h1>
+    <p class="subtitle"><%= posts.length %> posts</p>
+    
+    <div class="posts-grid" style="margin-top:20px;">
+      <% posts.forEach(post => { %>
+        <article class="post-card">
+          <a href="/post/<%= post.slug %>" class="card-link">
+            <div class="thumbnail" style="background-image: url('<%= post.thumbnail %>')"></div>
+            <div class="card-body">
+              <span class="category-badge"><%= post.category %></span>
+              <h2><%= post.title %></h2>
+              <p class="excerpt"><%= post.excerpt %>...</p>
+              <div class="meta">
+                <small>📅 <%= post.formattedDate %></small>
+                <small>⏱ <%= post.readTime %> min</small>
+              </div>
+            </div>
+          </a>
+        </article>
+      <% }) %>
+    </div>
+  </div>
+</body>
+</html>
