@@ -2,27 +2,85 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Blog Sederhana</title>
+  <title>Blog - Koleksi Tutorial & Script</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div class="container">
-    <header>
-      <h1>📝 Blog Sederhana</h1>
-      <a href="/new" class="btn">+ Tulis Post</a>
+    <header class="main-header">
+      <div>
+        <h1>📝 My Blog</h1>
+        <p class="subtitle">Koleksi tutorial, script & tips</p>
+      </div>
+      <a href="/new" class="btn">+ Post Baru</a>
     </header>
 
-    <% if (posts.length === 0) { %>
-      <p class="empty">Belum ada post. Yuk mulai nulis!</p>
+    <!-- Search Bar -->
+    <form action="/" method="GET" class="search-form">
+      <input type="text" name="q" placeholder="🔍 Cari post, tutorial, script..." 
+             value="<%= searchQuery %>" class="search-input">
+      <% if (currentCategory !== 'all') { %>
+        <input type="hidden" name="category" value="<%= currentCategory %>">
+      <% } %>
+      <button type="submit" class="btn">Cari</button>
+    </form>
+
+    <!-- Category Filter -->
+    <div class="categories">
+      <a href="/" class="cat-pill <%= currentCategory === 'all' ? 'active' : '' %>">All</a>
+      <% categories.forEach(cat => { %>
+        <a href="/?category=<%= encodeURIComponent(cat) %>" 
+           class="cat-pill <%= currentCategory === cat ? 'active' : '' %>">
+          <%= cat %>
+        </a>
+      <% }) %>
+    </div>
+
+    <!-- Info Search/Filter -->
+    <% if (searchQuery || (typeof tagFilter !== 'undefined' && tagFilter)) { %>
+      <div class="search-info">
+        <% if (searchQuery) { %>
+          Hasil pencarian untuk: <strong>"<%= searchQuery %>"</strong>
+        <% } %>
+        <% if (typeof tagFilter !== 'undefined' && tagFilter) { %>
+          Tag: <strong>#<%= tagFilter %></strong>
+        <% } %>
+        — <%= posts.length %> post ditemukan
+        <a href="/" class="clear-link">✕ Clear</a>
+      </div>
     <% } %>
 
-    <% posts.forEach(post => { %>
-      <article class="post-card">
-        <h2><a href="/post/<%= post.id %>"><%= post.title %></a></h2>
-        <small><%= post.date %></small>
-        <p><%= post.content.substring(0, 150) %>...</p>
-      </article>
-    <% }) %>
+    <!-- Posts Grid -->
+    <% if (posts.length === 0) { %>
+      <p class="empty">😅 Belum ada post. Yuk mulai nulis!</p>
+    <% } %>
+
+    <div class="posts-grid">
+      <% posts.forEach(post => { %>
+        <article class="post-card">
+          <a href="/post/<%= post.id %>" class="card-link">
+            <div class="thumbnail" style="background-image: url('<%= post.thumbnail %>')"></div>
+            <div class="card-body">
+              <span class="category-badge"><%= post.category %></span>
+              <h2><%= post.title %></h2>
+              <p class="excerpt"><%= post.excerpt %>...</p>
+              <div class="meta">
+                <small>📅 <%= post.date %></small>
+                <small>⏱ <%= post.readTime %> min baca</small>
+                <small>👁 <%= post.views || 0 %></small>
+              </div>
+              <% if (post.tags && post.tags.length > 0) { %>
+                <div class="tags">
+                  <% post.tags.forEach(tag => { %>
+                    <span class="tag">#<%= tag %></span>
+                  <% }) %>
+                </div>
+              <% } %>
+            </div>
+          </a>
+        </article>
+      <% }) %>
+    </div>
   </div>
 </body>
 </html>
