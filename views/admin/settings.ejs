@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Settings</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <%- include('../partials/admin-nav') %>
+  
+  <div class="admin-container">
+    <h1>⚙️ Settings</h1>
+    
+    <form action="/admin/settings" method="POST" style="max-width:600px;">
+      <div class="card">
+        <label>Site Title</label>
+        <input type="text" name="site_title" value="<%= site.site_title || '' %>" required>
+        
+        <label>Site Description</label>
+        <textarea name="site_description" rows="3"><%= site.site_description || '' %></textarea>
+        
+        <label>Site URL</label>
+        <input type="url" name="site_url" value="<%= site.site_url || '' %>" required>
+        
+        <label>Admin Email</label>
+        <input type="email" name="admin_email" value="<%= site.admin_email || '' %>">
+        
+        <button type="submit" class="btn" style="margin-top:20px;">💾 Save</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
