@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Posts</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <%- include('../partials/admin-nav') %>
+  
+  <div class="admin-container">
+    <div class="page-header">
+      <h1>📝 All Posts</h1>
+      <a href="/admin/posts/new" class="btn">+ New Post</a>
+    </div>
+
+    <div class="filter-tabs">
+      <a href="/admin/posts" class="tab <%= currentStatus === 'all' ? 'active' : '' %>">All</a>
+      <a href="/admin/posts?status=published" class="tab <%= currentStatus === 'published' ? 'active' : '' %>">Published</a>
+      <a href="/admin/posts?status=draft" class="tab <%= currentStatus === 'draft' ? 'active' : '' %>">Drafts</a>
+      <a href="/admin/posts?status=private" class="tab <%= currentStatus === 'private' ? 'active' : '' %>">Private</a>
+    </div>
+
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Views</th>
+          <th>Featured</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (posts.length === 0) { %>
+          <tr><td colspan="7" style="text-align:center;padding:40px;color:#888;">Belum ada post</td></tr>
+        <% } %>
+        <% posts.forEach(p => { %>
+          <tr>
+            <td>
+              <strong><%= p.title %></strong>
+              <% if (p.status === 'published') { %>
+                <a href="/post/<%= p.slug %>" target="_blank" style="margin-left:8px;font-size:12px;">↗</a>
+              <% } %>
+            </td>
+            <td><span class="badge"><%= p.category %></span></td>
+            <td><span class="badge status-<%= p.status %>"><%= p.status %></span></td>
+            <td><%= p.views %></td>
+            <td>
+              <form action="/admin/posts/<%= p.id %>/feature" method="POST" style="display:inline">
+                <button type="submit" class="icon-btn" title="Toggle feature">
+                  <%= p.is_featured ? '📌' : '📍' %>
+                </button>
+              </form>
+            </td>
+            <td><%= new Date(p.created_at).toLocaleDateString('id-ID') %></td>
+            <td>
+              <a href="/admin/posts/edit/<%= p.id %>" class="btn-sm">Edit</a>
+              <form action="/admin/posts/<%= p.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('Hapus post ini?')">
+                <button type="submit" class="btn-sm btn-danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
