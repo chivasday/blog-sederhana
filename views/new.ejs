@@ -20,10 +20,37 @@
     </div>
 
     <form action="<%= post ? '/edit/' + post.id : '/new' %>" method="POST">
-      <input type="text" name="title" placeholder="Judul" required 
+      <label>Judul</label>
+      <input type="text" name="title" placeholder="Judul post..." required 
              value="<%= post ? post.title : '' %>">
-      <textarea name="content" placeholder="Tulis pake Markdown... contoh:&#10;&#10;# Judul&#10;&#10;\`\`\`javascript&#10;console.log('hello');&#10;\`\`\`" 
+      
+      <div class="form-row">
+        <div class="form-col">
+          <label>Kategori</label>
+          <select name="category" required>
+            <% categories.forEach(cat => { %>
+              <option value="<%= cat %>" <%= post && post.category === cat ? 'selected' : '' %>>
+                <%= cat %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+        
+        <div class="form-col">
+          <label>Tags (pisah koma)</label>
+          <input type="text" name="tags" placeholder="nodejs, tutorial, api" 
+                 value="<%= post && post.tags ? post.tags.join(', ') : '' %>">
+        </div>
+      </div>
+      
+      <label>Thumbnail URL (opsional - kosongin buat auto)</label>
+      <input type="url" name="thumbnail" placeholder="https://example.com/image.jpg" 
+             value="<%= post ? post.thumbnail : '' %>">
+      
+      <label>Konten (Markdown)</label>
+      <textarea name="content" placeholder="Tulis pake Markdown..." 
                 rows="20" required><%= post ? post.content : '' %></textarea>
+      
       <button type="submit" class="btn">💾 <%= post ? 'Update' : 'Publish' %></button>
     </form>
   </div>
