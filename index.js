@@ -28,6 +28,9 @@ app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(cookieParser());
 
+// Trust proxy - WAJIB untuk Hostinger!
+app.set('trust proxy', 1);
+
 app.use(session({
   key: 'blog_session',
   secret: process.env.SESSION_SECRET,
@@ -35,9 +38,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 minggu
+    maxAge: 1000 * 60 * 60 * 24 * 7,
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production'
+    secure: false,      // ← PENTING: false dulu!
+    sameSite: 'lax'
   }
 }));
 
