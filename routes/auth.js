@@ -4,6 +4,7 @@ const db = require('../config/db');
 const { redirectIfAuth } = require('../middleware/auth');
 const router = express.Router();
 
+// ============ LOGIN ============
 router.get('/login', redirectIfAuth, (req, res) => {
   res.render('admin/login', { error: null });
 });
@@ -18,7 +19,19 @@ router.post('/login', async (req, res) => {
     }
     
     const user = users[0];
-    const match = await bcrypt.compare(password, user.password);
+    let match = false;
+    
+    // Support both plain text & bcrypt hash (temporary)
+    if (user.password.startsWith('$2')) {
+      match = await bcrypt.compare(password, user.password);
+    } else {
+      match = (password === user.password);
+      // Auto-upgrade ke bcrypt setelah login sukses
+      if (match) {
+        const hash = await bcrypt.hash(password, 10);
+        await db.query('UPDATE users SET password = ? WHERE id = ?', [hash, user.id]);
+      }
+    }
     
     if (!match) {
       return res.render('admin/login', { error: 'Password salah' });
@@ -34,49 +47,58 @@ router.post('/login', async (req, res) => {
     res.redirect('/admin');
   } catch (e) {
     console.error(e);
-    res.render('admin/login', { error: 'Terjadi error' });
+    res.render('admin/login', { error: 'Error: ' + e.message });
   }
 });
 
-router.get('/logout', (req, res) => {
-  req.session.destroy(() => res.redirect('/admin/login'));
-});
-// TAMBAHIN DI routes/auth.js - HAPUS SETELAH PAKAI!
-const bcrypt = require('bcrypt');
-const db = require('../config/db');
-
-router.get('/setup-first-admin-xyz123', async (req, res) => {
+// ============ SETUP ADMIN (TEMPORARY - HAPUS SETELAH DIPAKAI!) ============
+router.get('/setup-xyz-123-secret', async (req, res) => {
   try {
-    // Cek kalau udah ada user, tolak
     const [existing] = await db.query('SELECT COUNT(*) as count FROM users');
+    
     if (existing[0].count > 0) {
-      return res.send('❌ Admin sudah ada. Route ini di-disable.');
+      return res.send(`
+        <h1>ℹ️ Admin sudah ada (${existing[0].count} user)</h1>
+        <p><a href="/admin/login">Go to Login</a></p>
+        <p>Reset password? <a href="/admin/setup-reset-xyz-123">Click here</a></p>
+      `);
     }
     
-    const username = 'admin';
-    const password = 'Ayani170';  // GANTI NANTI!
-    const email = 'admin@televisodes.com';
-    
-    const hash = await bcrypt.hash(password, 10);
     await db.query(
       'INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)',
-      [username, hash, email, 'admin']
+      ['admin', 'admin123', 'admin@televisodes.com', 'admin']
     );
     
     res.send(`
       <h1>✅ Admin Created!</h1>
-      <p><strong>Username:</strong> ${username}</p>
-      <p><strong>Password:</strong> ${password}</p>
-      <p style="color:red;"><strong>⚠️ PENTING:</strong></p>
-      <ol>
-        <li>Login dulu di <a href="/admin/login">/admin/login</a></li>
-        <li>Ganti password via Settings</li>
-        <li>HAPUS route ini dari code & redeploy!</li>
-      </ol>
+      <p><strong>Username:</strong> admin</p>
+      <p><strong>Password:</strong> admin123</p>
+      <p><a href="/admin/login">→ LOGIN NOW</a></p>
+      <p style="color:red;"><strong>⚠️ HAPUS route ini setelah login!</strong></p>
+    `);
+  } catch (e) {
+    res.send('<pre>Error: ' + e.message + '</pre>');
+  }
+});
+
+// ============ RESET PASSWORD (TEMPORARY) ============
+router.get('/setup-reset-xyz-123', async (req, res) => {
+  try {
+    await db.query("UPDATE users SET password = 'admin123' WHERE username = 'admin'");
+    res.send(`
+      <h1>🔄 Password Reset!</h1>
+      <p><strong>Username:</strong> admin</p>
+      <p><strong>Password:</strong> admin123</p>
+      <p><a href="/admin/login">→ LOGIN NOW</a></p>
     `);
   } catch (e) {
     res.send('Error: ' + e.message);
   }
+});
+
+// ============ LOGOUT ============
+router.get('/logout', (req, res) => {
+  req.session.destroy(() => res.redirect('/admin/login'));
 });
 
 module.exports = router;
