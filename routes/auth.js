@@ -51,50 +51,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ============ SETUP ADMIN (TEMPORARY - HAPUS SETELAH DIPAKAI!) ============
-router.get('/setup-xyz-123-secret', async (req, res) => {
-  try {
-    const [existing] = await db.query('SELECT COUNT(*) as count FROM users');
-    
-    if (existing[0].count > 0) {
-      return res.send(`
-        <h1>ℹ️ Admin sudah ada (${existing[0].count} user)</h1>
-        <p><a href="/admin/login">Go to Login</a></p>
-        <p>Reset password? <a href="/admin/setup-reset-xyz-123">Click here</a></p>
-      `);
-    }
-    
-    await db.query(
-      'INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)',
-      ['admin', 'admin123', 'admin@televisodes.com', 'admin']
-    );
-    
-    res.send(`
-      <h1>✅ Admin Created!</h1>
-      <p><strong>Username:</strong> admin</p>
-      <p><strong>Password:</strong> admin123</p>
-      <p><a href="/admin/login">→ LOGIN NOW</a></p>
-      <p style="color:red;"><strong>⚠️ HAPUS route ini setelah login!</strong></p>
-    `);
-  } catch (e) {
-    res.send('<pre>Error: ' + e.message + '</pre>');
-  }
-});
-
-// ============ RESET PASSWORD (TEMPORARY) ============
-router.get('/setup-reset-xyz-123', async (req, res) => {
-  try {
-    await db.query("UPDATE users SET password = 'admin123' WHERE username = 'admin'");
-    res.send(`
-      <h1>🔄 Password Reset!</h1>
-      <p><strong>Username:</strong> admin</p>
-      <p><strong>Password:</strong> admin123</p>
-      <p><a href="/admin/login">→ LOGIN NOW</a></p>
-    `);
-  } catch (e) {
-    res.send('Error: ' + e.message);
-  }
-});
 
 // ============ LOGOUT ============
 router.get('/logout', (req, res) => {
