@@ -4,20 +4,44 @@
   <meta charset="UTF-8">
   <title><%= post.title %></title>
   <link rel="stylesheet" href="/style.css">
-  <!-- Highlight.js theme -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css">
 </head>
 <body>
   <div class="container">
-    <a href="/" class="back">← Kembali</a>
+    <a href="/" class="back">← Kembali ke Blog</a>
+    
     <article class="post-detail">
-      <h1><%= post.title %></h1>
-      <small><%= post.date %></small>
+      <!-- Thumbnail -->
+      <div class="post-thumbnail" style="background-image: url('<%= thumbnail %>')"></div>
       
+      <!-- Meta atas -->
+      <div class="post-meta-top">
+        <span class="category-badge"><%= post.category %></span>
+      </div>
+      
+      <h1><%= post.title %></h1>
+      
+      <div class="post-meta">
+        <small>📅 <%= post.date %></small>
+        <small>⏱ <%= readTime %> min baca</small>
+        <small>👁 <%= post.views %> views</small>
+      </div>
+
+      <!-- Tags -->
+      <% if (post.tags && post.tags.length > 0) { %>
+        <div class="tags tags-top">
+          <% post.tags.forEach(tag => { %>
+            <a href="/tag/<%= tag %>" class="tag">#<%= tag %></a>
+          <% }) %>
+        </div>
+      <% } %>
+      
+      <!-- Content -->
       <div class="markdown-body">
         <%- renderedContent %>
       </div>
       
+      <!-- Actions -->
       <div class="actions">
         <a href="/edit/<%= post.id %>" class="btn">✏️ Edit</a>
         <form action="/delete/<%= post.id %>" method="POST" style="display:inline" onsubmit="return confirm('Hapus post ini?')">
@@ -25,9 +49,28 @@
         </form>
       </div>
     </article>
+
+    <!-- Related Posts -->
+    <% if (related && related.length > 0) { %>
+      <section class="related">
+        <h2>📚 Post Terkait</h2>
+        <div class="posts-grid">
+          <% related.forEach(p => { %>
+            <article class="post-card">
+              <a href="/post/<%= p.id %>" class="card-link">
+                <div class="thumbnail" style="background-image: url('<%= p.thumbnail %>')"></div>
+                <div class="card-body">
+                  <span class="category-badge"><%= p.category %></span>
+                  <h3><%= p.title %></h3>
+                </div>
+              </a>
+            </article>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
   </div>
 
-  <!-- Script buat tombol Copy di code block -->
   <script>
     document.querySelectorAll('pre').forEach(pre => {
       const btn = document.createElement('button');
