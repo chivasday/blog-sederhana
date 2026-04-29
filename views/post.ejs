@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title><%= post.title %></title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back">← Kembali</a>
+    <article class="post-detail">
+      <h1><%= post.title %></h1>
+      <small><%= post.date %></small>
+      <p><%= post.content %></p>
+      <form action="/delete/<%= post.id %>" method="POST" onsubmit="return confirm('Hapus post ini?')">
+        <button type="submit" class="btn-danger">🗑 Hapus</button>
+      </form>
+    </article>
+  </div>
+</body>
+</html>
