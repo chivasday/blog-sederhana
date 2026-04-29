@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="<%= theme %>">
+<head>
+  <meta charset="UTF-8">
+  <title><%= post.meta_title || post.title %></title>
+  <meta name="description" content="<%= post.meta_description || post.excerpt %>">
+  <meta name="keywords" content="<%= post.meta_keywords || '' %>">
+  <meta property="og:title" content="<%= post.title %>">
+  <meta property="og:description" content="<%= post.meta_description || post.excerpt %>">
+  <meta property="og:image" content="<%= thumbnail %>">
+  <meta property="og:url" content="<%= shareUrl %>">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css">
+  <% if (videoType === 'hls') { %>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <% } %>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back">← Back</a>
+    
+    <article class="post-detail">
+      <% if (videoType === 'youtube' && youtubeId) { %>
+        <div class="video-wrap">
+          <iframe src="https://www.youtube.com/embed/<%= youtubeId %>" frameborder="0" allowfullscreen></iframe>
+        </div>
+      <% } else if (videoType === 'mp4') { %>
+        <video controls class="post-video" poster="<%= thumbnail %>">
+          <source src="<%= post.video_url %>" type="video/mp4">
+        </video>
+      <% } else if (videoType === 'hls') { %>
+        <video id="hlsVideo" controls class="post-video" poster="<%= thumbnail %>"></video>
+        <script>
+          const video = document.getElementById('hlsVideo');
+          if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource('<%= post.video_url %>');
+            hls.attachMedia(video);
+          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = '<%= post.video_url %>';
+          }
+        </script>
+      <% } else { %>
+        <div class="post-thumbnail" style="background-image: url('<%= thumbnail %>')"></div>
+      <% } %>
+      
+      <div class="post-meta-top">
+        <span class="category-badge"><%= post.category %></span>
+        <% if (post.status === 'private') { %><span class="badge status-private">🔒 Private</span><% } %>
+      </div>
+      
+      <h1><%= post.title %></h1>
+      
+      <div class="post-meta">
+        <small>📅 <%= formattedDate %></small>
+        <small>⏱ <%= readTime %> min</small>
+        <small>👁 <%= post.views %></small>
+      </div>
+
+      <% if (tags && tags.length > 0) { %>
+        <div class="tags tags-top">
+          <% tags.forEach(t => { %>
+            <a href="/tag/<%= t.slug %>" class="tag">#<%= t.name %></a>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <div class="share-buttons">
+        <a href="https://twitter.com/intent/tweet?url=<%= encodeURIComponent(shareUrl) %>&text=<%= encodeURIComponent(post.title) %>" target="_blank" class="share-btn twitter">𝕏 Twitter</a>
+        <a href="https://t.me/share/url?url=<%= encodeURIComponent(shareUrl) %>&text=<%= encodeURIComponent(post.title) %>" target="_blank" class="share-btn telegram">✈ Telegram</a>
+        <a href="https://reddit.com/submit?url=<%= encodeURIComponent(shareUrl) %>&title=<%= encodeURIComponent(post.title) %>" target="_blank" class="share-btn reddit">🔥 Reddit</a>
+        <button onclick="navigator.clipboard.writeText('<%= shareUrl %>').then(()=>alert('Link copied!'))" class="share-btn copy">📋 Copy</button>
+      </div>
+      
+      <div class="markdown-body">
+        <%- renderedContent %>
+      </div>
+    </article>
+
+    <% if (related && related.length > 0) { %>
+      <section class="related">
+        <h2>📚 Related</h2>
+        <div class="posts-grid">
+          <% related.forEach(p => { %>
+            <article class="post-card">
+              <a href="/post/<%= p.slug %>" class="card-link">
+                <div class="thumbnail" style="background-image: url('<%= p.thumbnail %>')"></div>
+                <div class="card-body">
+                  <span class="category-badge"><%= p.category %></span>
+                  <h3><%= p.title %></h3>
+                </div>
+              </a>
+            </article>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
+
+    <section id="comments" class="comments-section">
+      <h2>💬 Comments (<%= comments.length %>)</h2>
+      
+      <form action="/post/<%= post.slug %>/comment" method="POST" class="comment-form">
+        <input type="text" name="name" placeholder="Nama" required>
+        <input type="email" name="email" placeholder="Email (opsional)">
+        <textarea name="content" placeholder="Komentar..." rows="4" required></textarea>
+        <button type="submit" class="btn">Post Comment</button>
+      </form>
+
+      <div class="comments-list">
+        <% comments.forEach(c => { %>
+          <div class="comment">
+            <div class="comment-header">
+              <strong><%= c.name %></strong>
+              <small><%= new Date(c.created_at).toLocaleDateString('id-ID') %></small>
+            </div>
+            <p><%= c.content %></p>
+            <% if (c.replies && c.replies.length > 0) { %>
+              <div class="replies">
+                <% c.replies.forEach(r => { %>
+                  <div class="comment reply">
+                    <div class="comment-header">
+                      <strong><%= r.name %></strong>
+                      <small><%= new Date(r.created_at).toLocaleDateString('id-ID') %></small>
+                    </div>
+                    <p><%= r.content %></p>
+                  </div>
+                <% }) %>
+              </div>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    document.querySelectorAll('pre').forEach(pre => {
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = '📋 Copy';
+      btn.onclick = () => {
+        const code = pre.querySelector('code').innerText;
+        navigator.clipboard.writeText(code);
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => btn.textContent = '📋 Copy', 2000);
+      };
+      pre.style.position = 'relative';
+      pre.appendChild(btn);
+    });
+  </script>
+</body>
+</html>
