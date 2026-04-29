@@ -1,221 +1,73 @@
+require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 const bodyParser = require('body-parser');
-const fs = require('fs');
-const { marked } = require('marked');
-const hljs = require('highlight.js');
-const createDOMPurify = require('dompurify');
-const { JSDOM } = require('jsdom');
-
-const window = new JSDOM('').window;
-const DOMPurify = createDOMPurify(window);
+const cookieParser = require('cookie-parser');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const POSTS_FILE = './posts.json';
 
-// Kategori tersedia
-const CATEGORIES = ['Tutorial', 'Script', 'Tips & Trick', 'AI Prompt', 'Review', 'Lainnya'];
-
-// Setup marked
-marked.setOptions({
-  highlight: function(code, lang) {
-    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-    return hljs.highlight(code, { language }).value;
-  },
-  breaks: true,
-  gfm: true
+// Session store di MySQL
+const sessionStore = new MySQLStore({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
 });
 
+// View engine
 app.set('view engine', 'ejs');
-app.use(express.static('public'));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+app.set('views', path.join(__dirname, 'views'));
 
-// Helpers
-function getPosts() {
-  if (!fs.existsSync(POSTS_FILE)) return [];
-  return JSON.parse(fs.readFileSync(POSTS_FILE, 'utf8'));
-}
+// Middleware
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(cookieParser());
 
-function savePosts(posts) {
-  fs.writeFileSync(POSTS_FILE, JSON.stringify(posts, null, 2));
-}
-
-function renderMarkdown(text) {
-  const html = marked.parse(text);
-  return DOMPurify.sanitize(html, { ADD_ATTR: ['class'], ADD_TAGS: ['code', 'pre'] });
-}
-
-// Strip markdown buat excerpt
-function stripMarkdown(text) {
-  return text
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/[#*_~>\$\$()]/g, '')
-    .replace(/!\$.*?\$\$.*?\$/g, '')
-    .replace(/\n+/g, ' ')
-    .trim();
-}
-
-// Estimasi waktu baca
-function readingTime(text) {
-  const words = stripMarkdown(text).split(/\s+/).length;
-  return Math.max(1, Math.ceil(words / 200));
-}
-
-// Generate thumbnail otomatis kalau kosong
-function getThumbnail(post) {
-  if (post.thumbnail && post.thumbnail.trim()) return post.thumbnail;
-  // Auto thumbnail pake placeholder dengan warna random berdasarkan category
-  const colors = {
-    'Tutorial': '4F46E5',
-    'Script': '059669',
-    'Tips & Trick': 'DC2626',
-    'AI Prompt': '7C3AED',
-    'Review': 'EA580C',
-    'Lainnya': '6B7280'
-  };
-  const color = colors[post.category] || '6B7280';
-  const text = encodeURIComponent(post.title.substring(0, 30));
-  return `https://placehold.co/600x300/${color}/white?text=${text}`;
-}
-
-// ============ ROUTES ============
-
-// Homepage dengan search & filter
-app.get('/', (req, res) => {
-  let posts = getPosts();
-  const { q, category } = req.query;
-
-  // Filter by category
-  if (category && category !== 'all') {
-    posts = posts.filter(p => p.category === category);
+app.use(session({
+  key: 'blog_session',
+  secret: process.env.SESSION_SECRET,
+  store: sessionStore,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 minggu
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production'
   }
+}));
 
-  // Search
-  if (q) {
-    const query = q.toLowerCase();
-    posts = posts.filter(p => 
-      p.title.toLowerCase().includes(query) ||
-      p.content.toLowerCase().includes(query) ||
-      (p.tags && p.tags.some(t => t.toLowerCase().includes(query)))
-    );
-  }
+// Inject user to all views
+const { injectUser } = require('./middleware/auth');
+app.use(injectUser);
 
-  // Enrich data
-  const enriched = posts.map(p => ({
-    ...p,
-    excerpt: stripMarkdown(p.content).substring(0, 150),
-    readTime: readingTime(p.content),
-    thumbnail: getThumbnail(p)
-  }));
-
-  res.render('index', { 
-    posts: enriched, 
-    categories: CATEGORIES,
-    currentCategory: category || 'all',
-    searchQuery: q || ''
-  });
+// Inject theme
+app.use((req, res, next) => {
+  res.locals.theme = req.cookies.theme || 'light';
+  next();
 });
 
-// Form post baru
-app.get('/new', (req, res) => {
-  res.render('new', { post: null, categories: CATEGORIES });
+// Routes
+app.use('/', require('./routes/public'));
+app.use('/admin', require('./routes/auth'));
+app.use('/admin', require('./routes/admin'));
+app.use('/api', require('./routes/api'));
+
+// 404
+app.use((req, res) => {
+  res.status(404).render('404');
 });
 
-// Simpan post baru
-app.post('/new', (req, res) => {
-  const posts = getPosts();
-  const newPost = {
-    id: Date.now(),
-    title: req.body.title,
-    category: req.body.category || 'Lainnya',
-    tags: req.body.tags ? req.body.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-    thumbnail: req.body.thumbnail || '',
-    content: req.body.content,
-    views: 0,
-    date: new Date().toLocaleString('id-ID')
-  };
-  posts.unshift(newPost);
-  savePosts(posts);
-  res.redirect('/post/' + newPost.id);
-});
-
-// Detail post
-app.get('/post/:id', (req, res) => {
-  const posts = getPosts();
-  const postIndex = posts.findIndex(p => p.id == req.params.id);
-  if (postIndex === -1) return res.status(404).send('Post tidak ditemukan');
-  
-  // Increment views
-  posts[postIndex].views = (posts[postIndex].views || 0) + 1;
-  savePosts(posts);
-  
-  const post = posts[postIndex];
-  const renderedContent = renderMarkdown(post.content);
-  const readTime = readingTime(post.content);
-  const thumbnail = getThumbnail(post);
-  
-  // Related posts (same category, exclude current)
-  const related = posts
-    .filter(p => p.category === post.category && p.id !== post.id)
-    .slice(0, 3)
-    .map(p => ({ ...p, thumbnail: getThumbnail(p) }));
-  
-  res.render('post', { post, renderedContent, readTime, thumbnail, related });
-});
-
-// Edit
-app.get('/edit/:id', (req, res) => {
-  const posts = getPosts();
-  const post = posts.find(p => p.id == req.params.id);
-  if (!post) return res.status(404).send('Post tidak ditemukan');
-  res.render('new', { post, categories: CATEGORIES });
-});
-
-app.post('/edit/:id', (req, res) => {
-  const posts = getPosts();
-  const index = posts.findIndex(p => p.id == req.params.id);
-  if (index === -1) return res.status(404).send('Post tidak ditemukan');
-  
-  posts[index].title = req.body.title;
-  posts[index].category = req.body.category || 'Lainnya';
-  posts[index].tags = req.body.tags ? req.body.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
-  posts[index].thumbnail = req.body.thumbnail || '';
-  posts[index].content = req.body.content;
-  posts[index].date = new Date().toLocaleString('id-ID') + ' (edited)';
-  savePosts(posts);
-  res.redirect('/post/' + req.params.id);
-});
-
-// Delete
-app.post('/delete/:id', (req, res) => {
-  let posts = getPosts();
-  posts = posts.filter(p => p.id != req.params.id);
-  savePosts(posts);
-  res.redirect('/');
-});
-
-// Filter by tag
-app.get('/tag/:tag', (req, res) => {
-  const tag = req.params.tag.toLowerCase();
-  const posts = getPosts()
-    .filter(p => p.tags && p.tags.some(t => t.toLowerCase() === tag))
-    .map(p => ({
-      ...p,
-      excerpt: stripMarkdown(p.content).substring(0, 150),
-      readTime: readingTime(p.content),
-      thumbnail: getThumbnail(p)
-    }));
-  
-  res.render('index', { 
-    posts, 
-    categories: CATEGORIES,
-    currentCategory: 'all',
-    searchQuery: '',
-    tagFilter: tag
-  });
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).send('Server error');
 });
 
 app.listen(PORT, () => {
-  console.log(`Blog jalan di http://localhost:${PORT}`);
+  console.log(`🚀 Blog running on port ${PORT}`);
 });
