@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="<%= theme %>">
+<head>
+  <meta charset="UTF-8">
+  <title><%= site.site_title %></title>
+  <meta name="description" content="<%= site.site_description %>">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="alternate" type="application/rss+xml" href="/rss.xml" title="RSS">
+</head>
+<body>
+  <div class="container">
+    <header class="main-header">
+      <div>
+        <h1>📝 <%= site.site_title %></h1>
+        <p class="subtitle"><%= site.site_description %></p>
+      </div>
+      <div class="header-actions">
+        <button onclick="toggleTheme()" class="theme-btn">🌙</button>
+        <% if (currentUser) { %>
+          <a href="/admin" class="btn">Admin</a>
+        <% } %>
+      </div>
+    </header>
+
+    <form action="/" method="GET" class="search-form">
+      <input type="text" name="q" placeholder="🔍 Cari..." value="<%= searchQuery %>" class="search-input">
+      <button type="submit" class="btn">Cari</button>
+    </form>
+
+    <div class="categories">
+      <a href="/" class="cat-pill <%= currentCategory === 'all' ? 'active' : '' %>">All</a>
+      <% categories.forEach(cat => { %>
+        <a href="/?category=<%= encodeURIComponent(cat.category) %>" class="cat-pill <%= currentCategory === cat.category ? 'active' : '' %>">
+          <%= cat.category %> (<%= cat.count %>)
+        </a>
+      <% }) %>
+    </div>
+
+    <% if (featured && featured.length > 0 && !searchQuery && currentCategory === 'all') { %>
+      <section class="featured-section">
+        <h2>📌 Featured</h2>
+        <div class="posts-grid">
+          <% featured.forEach(post => { %>
+            <article class="post-card featured">
+              <a href="/post/<%= post.slug %>" class="card-link">
+                <div class="thumbnail" style="background-image: url('<%= post.thumbnail %>')"></div>
+                <div class="card-body">
+                  <span class="category-badge"><%= post.category %></span>
+                  <h2><%= post.title %></h2>
+                </div>
+              </a>
+            </article>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
+
+    <div class="posts-grid">
+      <% if (posts.length === 0) { %>
+        <p class="empty">😅 Belum ada post.</p>
+      <% } %>
+      <% posts.forEach(post => { %>
+        <article class="post-card">
+          <a href="/post/<%= post.slug %>" class="card-link">
+            <div class="thumbnail" style="background-image: url('<%= post.thumbnail %>')"></div>
+            <div class="card-body">
+              <span class="category-badge"><%= post.category %></span>
+              <h2><%= post.title %></h2>
+              <p class="excerpt"><%= post.excerpt %>...</p>
+              <div class="meta">
+                <small>📅 <%= post.formattedDate %></small>
+                <small>⏱ <%= post.readTime %> min</small>
+                <small>👁 <%= post.views %></small>
+              </div>
+            </div>
+          </a>
+        </article>
+      <% }) %>
+    </div>
+
+    <% if (popularTags && popularTags.length > 0) { %>
+      <section class="tags-cloud">
+        <h3>🏷 Popular Tags</h3>
+        <div>
+          <% popularTags.forEach(t => { %>
+            <a href="/tag/<%= t.slug %>" class="tag">#<%= t.name %> (<%= t.count %>)</a>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
+
+    <footer class="footer">
+      <p>© <%= new Date().getFullYear() %> <%= site.site_title %> • <a href="/rss.xml">RSS</a></p>
+    </footer>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const current = document.documentElement.dataset.theme;
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      fetch('/theme', { method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded'}, body: `theme=${next}` });
+    }
+  </script>
+</body>
+</html>
