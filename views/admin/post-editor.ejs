@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title><%= post ? 'Edit' : 'New' %> Post</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <%- include('../partials/admin-nav') %>
+  
+  <div class="admin-container">
+    <h1><%= post ? '✏️ Edit Post' : '📝 New Post' %></h1>
+    
+    <form action="<%= post ? '/admin/posts/edit/' + post.id : '/admin/posts/new' %>" method="POST" class="editor-form">
+      <div class="editor-grid">
+        <div class="editor-main">
+          <label>Title</label>
+          <input type="text" name="title" required value="<%= post ? post.title : '' %>" placeholder="Judul post...">
+          
+          <label>Content (Markdown)</label>
+          <div class="editor-toolbar">
+            <button type="button" onclick="uploadImage()">📷 Upload Image</button>
+            <button type="button" onclick="uploadFromUrl()">🔗 From URL</button>
+            <input type="file" id="imageUpload" accept="image/*" style="display:none">
+          </div>
+          <textarea name="content" id="content" rows="25" required placeholder="Tulis pake Markdown..."><%= post ? post.content : '' %></textarea>
+          
+          <label>Excerpt (opsional)</label>
+          <textarea name="excerpt" rows="3" placeholder="Auto dari content kalau kosong"><%= post ? post.excerpt || '' : '' %></textarea>
+        </div>
+
+        <div class="editor-sidebar">
+          <div class="card">
+            <label>Status</label>
+            <select name="status">
+              <option value="draft" <%= post && post.status === 'draft' ? 'selected' : '' %>>📝 Draft</option>
+              <option value="published" <%= post && post.status === 'published' ? 'selected' : '' %>>✅ Published</option>
+              <option value="private" <%= post && post.status === 'private' ? 'selected' : '' %>>🔒 Private</option>
+            </select>
+
+            <label style="margin-top:15px;">
+              <input type="checkbox" name="is_featured" value="1" <%= post && post.is_featured ? 'checked' : '' %>>
+              📌 Featured (Pin)
+            </label>
+          </div>
+
+          <div class="card">
+            <label>Category</label>
+            <select name="category">
+              <% const cats = ['Tutorial','Script','Tips & Trick','AI Prompt','Review','Lainnya']; %>
+              <% cats.forEach(c => { %>
+                <option value="<%= c %>" <%= post && post.category === c ? 'selected' : '' %>><%= c %></option>
+              <% }) %>
+            </select>
+
+            <label>Tags (koma)</label>
+            <input type="text" name="tags" value="<%= post && post.tagsString ? post.tagsString : '' %>" placeholder="nodejs, tutorial">
+          </div>
+
+          <div class="card">
+            <label>Thumbnail URL</label>
+            <input type="text" name="thumbnail" id="thumbnail" value="<%= post ? post.thumbnail || '' : '' %>" placeholder="/uploads/... atau https://">
+            <button type="button" onclick="uploadThumbnail()" class="btn-sm" style="margin-top:5px;">📷 Upload Thumbnail</button>
+            <input type="file" id="thumbnailUpload" accept="image/*" style="display:none">
+          </div>
+
+          <div class="card">
+            <label>Video URL (YouTube/MP4/HLS)</label>
+            <input type="text" name="video_url" value="<%= post ? post.video_url || '' : '' %>" placeholder="https://youtube.com/... atau .mp4">
+          </div>
+
+          <div class="card">
+            <h3 style="font-size:14px;margin-bottom:10px;">🔍 SEO</h3>
+            <label>Meta Title</label>
+            <input type="text" name="meta_title" value="<%= post ? post.meta_title || '' : '' %>">
+            
+            <label>Meta Description</label>
+            <textarea name="meta_description" rows="3"><%= post ? post.meta_description || '' : '' %></textarea>
+            
+            <label>Keywords</label>
+            <input type="text" name="meta_keywords" value="<%= post ? post.meta_keywords || '' : '' %>" placeholder="pisah, koma">
+          </div>
+
+          <button type="submit" class="btn btn-block">💾 Save Post</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Upload image inline
+    function uploadImage() {
+      document.getElementById('imageUpload').click();
+    }
+    
+    document.getElementById('imageUpload').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const res = await fetch('/admin/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.url) {
+        const ta = document.getElementById('content');
+        ta.value += `\n\n![Image](${data.url})\n`;
+        alert('✅ Uploaded!');
+      } else {
+        alert('❌ Upload failed');
+      }
+    });
+    
+    async function uploadFromUrl() {
+      const url = prompt('Paste image URL (termasuk dari Google Apps Script):');
+      if (!url) return;
+      
+      const res = await fetch('/admin/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      if (data.url) {
+        const ta = document.getElementById('content');
+        ta.value += `\n\n![Image](${data.url})\n`;
+        alert('✅ Uploaded!');
+      } else {
+        alert('❌ Failed: ' + (data.error || 'unknown'));
+      }
+    }
+    
+    function uploadThumbnail() {
+      document.getElementById('thumbnailUpload').click();
+    }
+    
+    document.getElementById('thumbnailUpload').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const res = await fetch('/admin/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.url) {
+        document.getElementById('thumbnail').value = data.url;
+        alert('✅ Thumbnail set!');
+      }
+    });
+  </script>
+</body>
+</html>
