@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Login</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,sans-serif; }
+    body { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .login-box { background:white; padding:40px; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.3); width:100%; max-width:400px; }
+    h1 { margin-bottom:8px; color:#333; }
+    .subtitle { color:#888; margin-bottom:24px; font-size:14px; }
+    label { display:block; margin-bottom:6px; color:#444; font-size:13px; font-weight:600; }
+    input { width:100%; padding:12px; border:2px solid #eee; border-radius:6px; font-size:15px; margin-bottom:16px; }
+    input:focus { border-color:#667eea; outline:none; }
+    button { width:100%; padding:12px; background:#667eea; color:white; border:none; border-radius:6px; font-size:15px; font-weight:600; cursor:pointer; }
+    button:hover { background:#5568d3; }
+    .error { background:#fee; color:#c33; padding:10px; border-radius:6px; margin-bottom:16px; font-size:14px; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h1>🔐 Admin Login</h1>
+    <p class="subtitle">Masuk ke dashboard blog</p>
+    
+    <% if (error) { %>
+      <div class="error"><%= error %></div>
+    <% } %>
+    
+    <form action="/admin/login" method="POST">
+      <label>Username</label>
+      <input type="text" name="username" required autofocus>
+      
+      <label>Password</label>
+      <input type="password" name="password" required>
+      
+      <button type="submit">Login</button>
+    </form>
+  </div>
+</body>
+</html>
