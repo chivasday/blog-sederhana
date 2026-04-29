@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Comments</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <%- include('../partials/admin-nav') %>
+  
+  <div class="admin-container">
+    <h1>💬 Comments</h1>
+    
+    <table class="admin-table">
+      <thead>
+        <tr><th>Author</th><th>Content</th><th>Post</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        <% if (comments.length === 0) { %>
+          <tr><td colspan="6" style="text-align:center;padding:40px;">No comments</td></tr>
+        <% } %>
+        <% comments.forEach(c => { %>
+          <tr>
+            <td><strong><%= c.name %></strong><br><small><%= c.email %></small></td>
+            <td style="max-width:300px;"><%= c.content %></td>
+            <td><a href="/post/<%= c.post_slug %>" target="_blank"><%= c.post_title %></a></td>
+            <td><span class="badge status-<%= c.is_approved ? 'published' : 'draft' %>"><%= c.is_approved ? 'Approved' : 'Pending' %></span></td>
+            <td><%= new Date(c.created_at).toLocaleDateString('id-ID') %></td>
+            <td>
+              <form action="/admin/comments/<%= c.id %>/approve" method="POST" style="display:inline">
+                <button type="submit" class="btn-sm"><%= c.is_approved ? 'Unapprove' : 'Approve' %></button>
+              </form>
+              <form action="/admin/comments/<%= c.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('Hapus?')">
+                <button type="submit" class="btn-sm btn-danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
