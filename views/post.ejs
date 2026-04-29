@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title><%= post.title %></title>
   <link rel="stylesheet" href="/style.css">
+  <!-- Highlight.js theme -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css">
 </head>
 <body>
   <div class="container">
@@ -11,11 +13,35 @@
     <article class="post-detail">
       <h1><%= post.title %></h1>
       <small><%= post.date %></small>
-      <p><%= post.content %></p>
-      <form action="/delete/<%= post.id %>" method="POST" onsubmit="return confirm('Hapus post ini?')">
-        <button type="submit" class="btn-danger">🗑 Hapus</button>
-      </form>
+      
+      <div class="markdown-body">
+        <%- renderedContent %>
+      </div>
+      
+      <div class="actions">
+        <a href="/edit/<%= post.id %>" class="btn">✏️ Edit</a>
+        <form action="/delete/<%= post.id %>" method="POST" style="display:inline" onsubmit="return confirm('Hapus post ini?')">
+          <button type="submit" class="btn-danger">🗑 Hapus</button>
+        </form>
+      </div>
     </article>
   </div>
+
+  <!-- Script buat tombol Copy di code block -->
+  <script>
+    document.querySelectorAll('pre').forEach(pre => {
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = '📋 Copy';
+      btn.onclick = () => {
+        const code = pre.querySelector('code').innerText;
+        navigator.clipboard.writeText(code);
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => btn.textContent = '📋 Copy', 2000);
+      };
+      pre.style.position = 'relative';
+      pre.appendChild(btn);
+    });
+  </script>
 </body>
 </html>
