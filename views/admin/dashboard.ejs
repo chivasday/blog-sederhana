@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <%- include('../partials/admin-nav') %>
+  
+  <div class="admin-container">
+    <h1>📊 Dashboard</h1>
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Published</div>
+        <div class="stat-value"><%= stats.published || 0 %></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Drafts</div>
+        <div class="stat-value"><%= stats.drafts || 0 %></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Private</div>
+        <div class="stat-value"><%= stats.privates || 0 %></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Views</div>
+        <div class="stat-value"><%= stats.total_views || 0 %></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Comments</div>
+        <div class="stat-value"><%= stats.total_comments || 0 %></div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="card">
+        <h2>📈 Views (7 Hari Terakhir)</h2>
+        <canvas id="viewsChart"></canvas>
+      </div>
+      
+      <div class="card">
+        <h2>🔥 Top Posts</h2>
+        <ul class="simple-list">
+          <% topPosts.forEach(p => { %>
+            <li>
+              <a href="/post/<%= p.slug %>" target="_blank"><%= p.title %></a>
+              <span class="badge"><%= p.views %> views</span>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
+      
+      <div class="card">
+        <h2>🆕 Recent Posts</h2>
+        <ul class="simple-list">
+          <% recentPosts.forEach(p => { %>
+            <li>
+              <a href="/admin/posts/edit/<%= p.id %>"><%= p.title %></a>
+              <span class="badge status-<%= p.status %>"><%= p.status %></span>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ctx = document.getElementById('viewsChart');
+    const data = <%- JSON.stringify(viewsChart) %>;
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.map(d => new Date(d.date).toLocaleDateString('id-ID', {day:'numeric',month:'short'})),
+        datasets: [{
+          label: 'Views',
+          data: data.map(d => d.count),
+          borderColor: '#667eea',
+          backgroundColor: 'rgba(102,126,234,0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+  </script>
+</body>
+</html>
