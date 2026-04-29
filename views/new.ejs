@@ -2,17 +2,29 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Post Baru</title>
+  <title><%= post ? 'Edit' : 'Post Baru' %></title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div class="container">
     <a href="/" class="back">← Kembali</a>
-    <h1>Tulis Post Baru</h1>
-    <form action="/new" method="POST">
-      <input type="text" name="title" placeholder="Judul" required>
-      <textarea name="content" placeholder="Isi post..." rows="10" required></textarea>
-      <button type="submit" class="btn">Publish</button>
+    <h1><%= post ? '✏️ Edit Post' : '📝 Tulis Post Baru' %></h1>
+    
+    <div class="tips">
+      💡 <strong>Tips Markdown:</strong>
+      <code># Heading</code> • 
+      <code>**bold**</code> • 
+      <code>*italic*</code> • 
+      <code>\`code\`</code> • 
+      <code>\`\`\`js code block\`\`\`</code>
+    </div>
+
+    <form action="<%= post ? '/edit/' + post.id : '/new' %>" method="POST">
+      <input type="text" name="title" placeholder="Judul" required 
+             value="<%= post ? post.title : '' %>">
+      <textarea name="content" placeholder="Tulis pake Markdown... contoh:&#10;&#10;# Judul&#10;&#10;\`\`\`javascript&#10;console.log('hello');&#10;\`\`\`" 
+                rows="20" required><%= post ? post.content : '' %></textarea>
+      <button type="submit" class="btn">💾 <%= post ? 'Update' : 'Publish' %></button>
     </form>
   </div>
 </body>
